@@ -1,0 +1,76 @@
+<?php
+
+
+/*
+ * Implements hook_install().
+ *
+ * In Drupal 7, there is no need to install schema using this hook, the schema
+ * is already installed before this hook is called.
+ *
+ * We will create a default entry in the database.
+ *
+ * @see hook_install()
+ */
+function custom_search2_install() {
+	// nothing
+}
+
+
+
+/*
+ * Implements hook_uninstall().
+ *
+ * As in hook_install, there is no need to uninstall schema, Drupal will do it
+ * for us.
+ *
+ * @see hook_uninstall()
+ */
+function custom_search2_uninstall() {
+  	// nothing.
+}
+
+
+
+/**
+ * Implements hook_schema().
+ *
+ * Defines the database tables used by this module.
+ * Remember that the easiest way to create the code for hook_schema is with
+ * the @link http://drupal.org/project/schema schema module @endlink
+ *
+ * @see hook_schema()
+ */
+function custom_search2_schema() {
+
+  $schema['custom_search2_table'] = array(
+					   'description' => 'Stores words.',
+					   'fields' => array(
+							     'nid' => array(
+									    'type' => 'int',
+									    'unsigned' => TRUE,
+									    'not null' => TRUE,
+									    'default' => 0,
+									    'description' => 'The node ID of the node that has words in the word column.',
+									    ),
+							     'wid' => array(
+									     'type' => 'int',
+									     'unsigned' => TRUE,
+									     'not null' => TRUE,
+									     'default' => 0,
+									     'description' => 'The word ID for words of node nid.',
+									     ),
+							     'word' => array(
+									   'type' => 'text',
+									   'not null' => TRUE,
+									   'size' => 'big',
+									   'description' => 'A specific word.',
+									   ),
+							     ),
+					   'primary key' => array('nid', 'wid'),
+					   );
+  
+  return $schema;
+} 
+
+
+?>
