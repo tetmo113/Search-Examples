@@ -1,0 +1,4 @@
+name = Custom Search 1
+description = Example Search Module For Cleveland Drupal User Group
+package = other
+core = 7.x
