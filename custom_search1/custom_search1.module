@@ -1,0 +1,83 @@
+<?php
+
+/*
+ * Implement hook_menu()
+ */
+function custom_search1_menu() {
+  $items = array();  
+  return $items;
+} 
+
+
+
+/*
+ * Implements hook_search_info()
+ * This hook will create the path and tab title name to our search menu.
+ * You can access this at ?q=search or ?q=search/custom_search1
+ */
+function custom_search1_search_info() {
+  return array(
+  'title'=>'Custom Search 1',
+  'path'=>'custom_search1',
+  );
+}
+
+
+
+/*
+ * Implements hook_search_access()
+ * This will dictate what permissions are neede in
+ * administration->people->permissions to run the module.
+ */
+function custom_search1_search_access() {
+  return user_access('access content'); 
+}
+
+
+/*
+ * Implements hook_search_execute()
+ */
+function custom_search1_search_execute($keys = NULL, $conditions = NULL) {
+  // Code from hook_search_execute, but cut down to minimum code needed.
+
+
+  // Build matching conditions
+  $query = db_select('search_index', 'i', array('target' => 'slave'))->extend('SearchQuery')->extend('PagerDefault');  
+  $query->join('node', 'n', 'n.nid = i.sid');
+  $query
+    ->condition('n.status', 1)
+    ->addTag('node_access')
+    ->searchExpression($keys, 'node');
+  
+
+  // Only continue if the first pass query matches.
+  // See http://api.drupal.org/api/drupal/modules!search!search.extender.inc/class/SearchQuery/7
+  // for number of passes explanation.  
+  if (!$query->executeFirstPass()) {
+    return array();
+  }
+  
+
+  // Load results.
+  $find = $query
+    ->limit(10)
+    ->execute();
+
+
+  $results = array();
+  foreach ($find as $item) {    
+    $node = node_load($item->sid);  
+    
+    $results[] = array(
+      'title' => $node->title,       
+      'link' => url('node/' . $node->nid, array('absolute' => TRUE)),     
+      );
+  }
+
+
+  return $results;
+}
+
+
+
+?>
