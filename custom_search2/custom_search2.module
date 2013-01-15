@@ -1,0 +1,117 @@
+<?php
+
+/*
+ * Implement hook_menu()
+ */
+function custom_search2_menu() {
+  $items = array();  
+  return $items;
+} 
+
+
+
+/*
+ * Implements hook_search_info()
+ * This hook will create the path and tab title name to our search menu.
+ * You can access this at ?q=search or ?q=search/custom_search2
+ */
+function custom_search2_search_info() {
+  return array(
+  'title'=>'Custom Search 2',
+  'path'=>'custom_search2',
+  );
+}
+
+
+
+/*
+ * Implements hook_search_access()
+ * This will dictate what permissions are neede in
+ * administration->people->permissions to run the module.
+ */
+function custom_search2_search_access() {
+  return user_access('access content'); 
+}
+
+
+/*
+ * Implements hook_search_execute()
+ */
+function custom_search2_search_execute($keys = NULL, $conditions = NULL) {
+  // custom query - please do something better and more interesting than this!
+  $query = db_select('custom_search2_table', 'cs')->extend('PagerDefault');  
+  $query->join('node', 'n', 'n.nid = cs.nid');
+  $query->fields('n',array('nid'));
+  $query -> condition('n.status', 1);  // grab only published content    
+  // do an or on the search terms
+  $terms = explode(" ",$keys);
+  $query_or = db_or();
+  foreach( $terms as $term ){
+    $query_or -> condition('cs.word', '%' . db_like($term) . '%', 'LIKE');
+  }
+  $query -> condition($query_or);
+   
+
+  // Load results.
+  $find = $query
+    ->limit(10)
+    ->execute();
+
+
+  $results = array();
+  foreach ($find as $item) {    
+    $node = node_load($item->nid);  
+    
+    $results[] = array(
+      'title' => $node->title,       
+      'link' => url('node/' . $node->nid, array('absolute' => TRUE)),     
+      );
+  }
+
+
+  return $results;
+}
+
+
+
+/*
+ * Implements hook_node_update_index()    
+ */ 
+function custom_search2_node_update_index($node){
+
+  // delete the current entries for this node
+  $result = db_delete('custom_search2_table')
+    ->condition('nid', $node->nid)
+    ->execute();
+
+
+  //----------------------------------------------------------------
+  // get the webpage of the drupal node
+  $build = node_view($node); //view mode can be applied here
+  unset($build['#theme']);
+  $webpage = drupal_render($build);
+  $webpage = html_entity_decode($webpage);
+
+  // now do something really intelligent
+  $words = explode(" ",$webpage);  // pretend this is intelligent
+  //----------------------------------------------------------------^
+
+
+  $query = db_insert('custom_search2_table')->fields(array('nid','wid','word')); // from hook_schema
+  $ii=1;
+  foreach( $words as $word ){
+    $query->values(array(
+      'nid' => $node->nid,
+      'wid' => $ii,
+      'word' => $word,
+      ));   
+
+    $ii++;
+  }
+
+    
+    $result = $query->execute();    
+}    
+
+
+?>
